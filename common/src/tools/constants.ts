@@ -56,6 +56,13 @@ export const toolNames = [
   'web_search',
   'write_file',
   'write_todos',
+  'advanced_diff',
+  'ast_search',
+  'batch',
+  'git',
+  'multi_edit',
+  'skill_manager',
+  'todo_read',
 ] as const
 
 export const publishedTools = [
@@ -89,6 +96,13 @@ export const publishedTools = [
   'web_search',
   'write_file',
   'write_todos',
+  'advanced_diff',
+  'ast_search',
+  'batch',
+  'git',
+  'multi_edit',
+  'skill_manager',
+  'todo_read',
   // 'spawn_agent_inline',
 ] as const
 

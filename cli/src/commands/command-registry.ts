@@ -6,6 +6,7 @@ import { handleHelpCommand } from './help'
 import { handleImageCommand } from './image'
 import { handleInitializationFlowLocally } from './init'
 import { buildInterviewPrompt, buildPlanPrompt, buildReviewPromptFromArgs } from './prompt-builders'
+import { handleConnectCommand, handleModelsCommand } from './providers'
 import { runBashCommand } from './router'
 import { handleUsageCommand } from './usage'
 import { returnToFreebuffLanding } from '../hooks/use-freebuff-session'
@@ -440,6 +441,8 @@ const ALL_COMMANDS: CommandDefinition[] = [
       return { openPublishMode: true }
     },
   }),
+  // Remove old dynamic connect command — now handled by defineCommandWithArgs above
+
   defineCommand({
     name: 'gpt-5-agent',
     handler: (params) => {
@@ -453,19 +456,38 @@ const ALL_COMMANDS: CommandDefinition[] = [
       // Don't save to history - this is just a UI shortcut
     },
   }),
-  ...(CHATGPT_OAUTH_ENABLED
-    ? [
-        defineCommand({
-          name: 'connect',
-          aliases: ['connect:chatgpt', 'chatgpt'],
-          handler: (params) => {
-            useChatStore.getState().setInputMode('connect:chatgpt')
-            params.saveToHistory(params.inputValue.trim())
-            clearInput(params)
-          },
-        }),
-      ]
-    : []),
+  defineCommandWithArgs({
+    name: 'connect',
+    aliases: ['connect:chatgpt', 'chatgpt'],
+    handler: (params, args) => {
+      const trimmedArgs = args.trim()
+
+      // If user provided a provider name/API key, route to multi-provider connect
+      if (trimmedArgs) {
+        return handleConnectCommand(params, trimmedArgs)
+      }
+
+      // No args: show multi-provider connection status panel
+      return handleConnectCommand(params, '')
+    },
+  }),
+  defineCommandWithArgs({
+    name: 'models',
+    handler: (params, args) => {
+      return handleModelsCommand(params, args.trim())
+    },
+  }),
+  defineCommandWithArgs({
+    name: 'model',
+    aliases: ['switch-model', 'use-model'],
+    handler: (params, args) => {
+      const trimmedArgs = args.trim()
+      if (!trimmedArgs) {
+        return handleModelsCommand(params, '')
+      }
+      return handleModelsCommand(params, trimmedArgs)
+    },
+  }),
   defineCommand({
     name: 'history',
     aliases: ['chats'],

@@ -33,6 +33,13 @@ import { handleUpdateSubgoal } from './tool/update-subgoal'
 import { handleWebSearch } from './tool/web-search'
 import { handleWriteFile } from './tool/write-file'
 import { handleWriteTodos } from './tool/write-todos'
+import { handleAdvancedDiff } from './tool/advanced-diff'
+import { handleAstSearch } from './tool/ast-search'
+import { handleBatch } from './tool/batch'
+import { handleGit } from './tool/git'
+import { handleMultiEdit } from './tool/multi-edit'
+import { handleSkillManager } from './tool/skill-manager'
+import { handleTodoRead } from './tool/todo-read'
 
 import type { CodebuffToolHandlerFunction } from './handler-function-type'
 import type { ToolName } from '@codebuff/common/tools/constants'
@@ -82,6 +89,13 @@ export const codebuffToolHandlers = {
   web_search: handleWebSearch,
   write_file: handleWriteFile,
   write_todos: handleWriteTodos,
+  advanced_diff: handleAdvancedDiff,
+  ast_search: handleAstSearch,
+  batch: handleBatch,
+  git: handleGit,
+  multi_edit: handleMultiEdit,
+  skill_manager: handleSkillManager,
+  todo_read: handleTodoRead,
 } satisfies {
   [K in ToolName]: CodebuffToolHandlerFunction<K>
 }
