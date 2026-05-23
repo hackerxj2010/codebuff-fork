@@ -3,15 +3,20 @@
  */
 export type ToolName =
   | 'add_message'
+  | 'advanced_diff'
   | 'apply_patch'
   | 'ask_user'
+  | 'ast_search'
+  | 'batch'
   | 'code_search'
   | 'end_turn'
   | 'find_files'
+  | 'git'
   | 'glob'
   | 'gravity_index'
   | 'list_directory'
   | 'lookup_agent_info'
+  | 'multi_edit'
   | 'propose_str_replace'
   | 'propose_write_file'
   | 'read_docs'
@@ -24,11 +29,13 @@ export type ToolName =
   | 'set_messages'
   | 'set_output'
   | 'skill'
+  | 'skill_manager'
   | 'spawn_agents'
   | 'str_replace'
   | 'suggest_followups'
   | 'task_completed'
   | 'think_deeply'
+  | 'todo_read'
   | 'web_search'
   | 'write_file'
   | 'write_todos'
@@ -39,14 +46,20 @@ export type ToolName =
 export interface ToolParamsMap {
   add_message: AddMessageParams
   apply_patch: ApplyPatchParams
+  advanced_diff: AdvancedDiffParams
   ask_user: AskUserParams
+  ast_search: AstSearchParams
+  batch: BatchParams
   code_search: CodeSearchParams
   end_turn: EndTurnParams
   find_files: FindFilesParams
+  git: GitParams
   glob: GlobParams
   gravity_index: GravityIndexParams
   list_directory: ListDirectoryParams
   lookup_agent_info: LookupAgentInfoParams
+  multi_edit: MultiEditParams
+  skill_manager: SkillManagerParams
   propose_str_replace: ProposeStrReplaceParams
   propose_write_file: ProposeWriteFileParams
   read_docs: ReadDocsParams
@@ -64,13 +77,14 @@ export interface ToolParamsMap {
   suggest_followups: SuggestFollowupsParams
   task_completed: TaskCompletedParams
   think_deeply: ThinkDeeplyParams
+  todo_read: TodoReadParams
   web_search: WebSearchParams
   write_file: WriteFileParams
   write_todos: WriteTodosParams
 }
 
 /**
- * Add a new message to the conversation history. To be used for complex requests that can't be solved in a single step, as you may forget what happened!
+ * Add a new message to the conversation history.
  */
 export interface AddMessageParams {
   role: 'user' | 'assistant'
@@ -81,13 +95,9 @@ export interface AddMessageParams {
  * Apply a file operation (create, update, or delete) using Codex-style apply_patch format.
  */
 export interface ApplyPatchParams {
-  /** The file operation to perform. */
   operation: {
-    /** Operation type: create_file, update_file, or delete_file */
     type: 'create_file' | 'update_file' | 'delete_file'
-    /** File path relative to project root */
     path: string
-    /** Diff content. Required for create_file and update_file. Lines prefixed with + for creates, unified diff with @@ hunks for updates. */
     diff?: string
   }
 }
@@ -96,69 +106,96 @@ export interface ApplyPatchParams {
  * Ask the user multiple choice questions and pause execution until they respond.
  */
 export interface AskUserParams {
-  /** List of multiple choice questions to ask the user */
   questions: {
-    /** The question to ask the user */
     question: string
-    /** Short label (max 12 chars) displayed as a chip/tag */
     header?: string
-    /** Array of answer options with label and optional description (minimum 2) */
     options: {
-      /** The display text for this option */
       label: string
-      /** Explanation shown when option is focused */
       description?: string
     }[]
-    /** If true, allows selecting multiple options (checkbox). If false, single selection only (radio). */
     multiSelect?: boolean
-    /** Validation rules for "Other" text input */
     validation?: {
-      /** Maximum length for "Other" text input */
       maxLength?: number
-      /** Minimum length for "Other" text input */
       minLength?: number
-      /** Regex pattern for "Other" text input */
       pattern?: string
-      /** Custom error message when pattern fails */
       patternError?: string
     }
   }[]
 }
 
 /**
- * Search for string patterns in the project's files. This tool uses ripgrep (rg), a fast line-oriented search tool. Use this tool only when read_files is not sufficient to find the files you need.
+ * Execute multiple tool calls in parallel and collect results.
+ */
+/**
+ * Show structured diffs for changed files in the working tree.
+ */
+export interface AdvancedDiffParams {
+  filePath: string
+  stages?: ('staged' | 'unstaged' | 'working-tree')[]
+  contextLines?: number
+  format?: 'semantic' | 'unified' | 'json'
+}
+
+/**
+ * Search code using AST pattern matching via tree-sitter/ast-grep.
+ */
+export interface AstSearchParams {
+  pattern: string
+  path?: string
+  glob?: string
+  language?: string
+  maxResults?: number
+  contextLines?: number
+}
+
+/**
+ * Execute multiple tool calls in parallel and collect results.
+ */
+export interface BatchParams {
+  calls: {
+    toolName: string
+    input: Record<string, unknown>
+  }[]
+}
+
+/**
+ * Search for string patterns in the project's files using ripgrep.
  */
 export interface CodeSearchParams {
-  /** The pattern to search for. */
   pattern: string
-  /** Optional ripgrep flags to customize the search (e.g., "-i" for case-insensitive, "-g *.ts -g *.js" for TypeScript and JavaScript files only, "-g !*.test.ts" to exclude Typescript test files,  "-A 3" for 3 lines after match, "-B 2" for 2 lines before match). */
   flags?: string
-  /** Optional working directory to search within, relative to the project root. Defaults to searching the entire project. */
   cwd?: string
-  /** Maximum number of results to return per file. Defaults to 15. There is also a global limit of 250 results across all files. */
   maxResults?: number
 }
 
 /**
- * End your turn, regardless of any new tool results that might be coming. This will allow the user to type another prompt.
+ * End your turn, regardless of any new tool results that might be coming.
  */
 export interface EndTurnParams {}
 
 /**
- * Find several files related to a brief natural language description of the files or the name of a function or class you are looking for.
+ * Find several files related to a brief natural language description.
  */
 export interface FindFilesParams {
-  /** A brief natural language description of the files or the name of a function or class you are looking for. It's also helpful to mention a directory or two to look within. */
   prompt: string
 }
 
 /**
- * Search for files matching a glob pattern. Returns matching file paths sorted by modification time.
+ * Execute a git operation (status, diff, log, commit, add, branch, checkout, stash, push, pull).
+ */
+export interface GitParams {
+  operation: 'status' | 'diff' | 'diff_staged' | 'log' | 'commit' | 'add' | 'reset' | 'branch' | 'checkout' | 'stash' | 'push' | 'pull'
+  args?: string[]
+  message?: string
+  paths?: string[]
+  cwd?: string
+}
+
+/**
+ * Search for files matching a glob pattern.
  */
 export interface GlobParams {
-  /** Glob pattern to match files against (e.g., *.js, src/glob/*.ts, glob/test/glob/*.go). */
   pattern: string
-  /** Optional working directory to search within, relative to project root. If not provided, searches from project root. */
   cwd?: string
 }
 
@@ -167,47 +204,33 @@ export interface GlobParams {
  */
 export type GravityIndexParams =
   | {
-      /** Search for the best service recommendation. */
       action: 'search'
-      /** What the user needs, including stack, constraints, and required capabilities when known. */
       query: string
-      /** Continue a previous Gravity Index search as a follow-up. */
       search_id?: string
-      /** Optional structured context about the project, stack, or constraints. */
       context?: Record<string, any>
     }
   | {
-      /** Browse catalog services by category and/or keyword. */
       action: 'browse'
-      /** Optional category filter, e.g. Database, Auth, Payments, Hosting, Email, AI. */
       category?: string
-      /** Optional keyword filter, e.g. sendgrid or postgres. */
       q?: string
     }
   | {
-      /** List every category with service counts. */
       action: 'list_categories'
     }
   | {
-      /** Fetch full detail for a single service by slug. */
       action: 'get_service'
-      /** Service slug, e.g. supabase, stripe, sendgrid. */
       slug: string
     }
   | {
-      /** Report that an integration from a prior search was completed. */
       action: 'report_integration'
-      /** search_id from the earlier search result. */
       search_id: string
-      /** Slug of the service that was actually integrated. */
       integrated_slug: string
     }
 
 /**
- * List files and directories in the specified path. Returns separate arrays of file names and directory names.
+ * List files and directories in the specified path.
  */
 export interface ListDirectoryParams {
-  /** Directory path to list, relative to the project root. */
   path: string
 }
 
@@ -215,23 +238,30 @@ export interface ListDirectoryParams {
  * Retrieve information about an agent by ID
  */
 export interface LookupAgentInfoParams {
-  /** Agent ID (short local or full published format) */
   agentId: string
+}
+
+/**
+ * Apply multiple file edits atomically with fuzzy string matching.
+ */
+export interface MultiEditParams {
+  operations: {
+    filePath: string
+    oldString: string
+    newString: string
+    allowMultiple?: boolean
+  }[]
+  atomic?: boolean
 }
 
 /**
  * Propose string replacements in a file without actually applying them.
  */
 export interface ProposeStrReplaceParams {
-  /** The path to the file to edit. */
   path: string
-  /** Array of replacements to make. */
   replacements: {
-    /** The string to replace. This must be an *exact match* of the string you want to replace, including whitespace and punctuation. */
     oldString: string
-    /** The string to replace the corresponding oldString with. Can be empty to delete. */
     newString: string
-    /** Whether to allow multiple replacements of oldString. */
     allowMultiple?: boolean
   }[]
 }
@@ -240,11 +270,8 @@ export interface ProposeStrReplaceParams {
  * Propose creating or editing a file without actually applying the changes.
  */
 export interface ProposeWriteFileParams {
-  /** Path to the file relative to the **project root** */
   path: string
-  /** What the change is intended to do in only one sentence. */
   instructions: string
-  /** Edit snippet to apply to the file. */
   content: string
 }
 
@@ -252,29 +279,23 @@ export interface ProposeWriteFileParams {
  * Fetch up-to-date documentation for libraries and frameworks using Context7 API.
  */
 export interface ReadDocsParams {
-  /** The library or framework name (e.g., "Next.js", "MongoDB", "React"). Use the official name as it appears in documentation if possible. Only public libraries available in Context7's database are supported, so small or private libraries may not be available. */
   libraryTitle: string
-  /** Specific topic to focus on (e.g., "routing", "hooks", "authentication") */
   topic: string
-  /** Optional maximum number of tokens to return. Defaults to 20000. Values less than 10000 are automatically increased to 10000. */
   max_tokens?: number
 }
 
 /**
- * Read the multiple files from disk and return their contents. Use this tool to read as many files as would be helpful to answer the user's request.
+ * Read the multiple files from disk and return their contents.
  */
 export interface ReadFilesParams {
-  /** List of file paths to read. */
   paths: string[]
 }
 
 /**
- * Read one or more directory subtrees (as a blob including subdirectories, file names, and parsed variables within each source file) or return parsed variable names for files. If no paths are provided, returns the entire project tree.
+ * Read one or more directory subtrees.
  */
 export interface ReadSubtreeParams {
-  /** List of paths to directories or files. Relative to the project root. If omitted, the entire project tree is used. */
   paths?: string[]
-  /** Maximum token budget for the subtree blob; the tree will be truncated to fit within this budget by first dropping file variables and then removing the most-nested files and directories. */
   maxTokens?: number
 }
 
@@ -282,25 +303,18 @@ export interface ReadSubtreeParams {
  * Fetch a URL and extract readable text from the page.
  */
 export interface ReadUrlParams {
-  /** The full http:// or https:// URL to fetch and extract readable text from. */
   url: string
-  /** Maximum number of extracted text characters to return. Defaults to 20000. */
   max_chars?: number
 }
 
 /**
- * Render a small interactive UI widget in the Codebuff CLI. Currently supports a button that opens a link.
+ * Render a small interactive UI widget in the Codebuff CLI.
  */
 export interface RenderUiParams {
-  /** The UI widget to render. */
   widget: {
-    /** Widget type. Currently, the only supported widget is button. */
     type: 'button'
-    /** Short button label shown to the user. */
     text: string
-    /** The http:// or https:// URL to open when the user clicks the button. */
     link: string
-    /** Theme-aware color treatment. Use primary for the main action and secondary for lower-emphasis actions. */
     variant?: 'primary' | 'secondary'
   }
 }
@@ -309,21 +323,16 @@ export interface RenderUiParams {
  * Parameters for run_file_change_hooks tool
  */
 export interface RunFileChangeHooksParams {
-  /** List of file paths that were changed and should trigger file change hooks */
   files: string[]
 }
 
 /**
- * Execute a CLI command from the **project root** (different from the user's cwd).
+ * Execute a CLI command from the project root.
  */
 export interface RunTerminalCommandParams {
-  /** CLI command valid for user's OS. */
   command: string
-  /** Either SYNC (waits, returns output) or BACKGROUND (runs in background). Default SYNC */
   process_type?: 'SYNC' | 'BACKGROUND'
-  /** The working directory to run the command in. Default is the project root. */
   cwd?: string
-  /** Set to -1 for no timeout. Does not apply for BACKGROUND commands. Default 30 */
   timeout_seconds?: number
 }
 
@@ -335,28 +344,35 @@ export interface SetMessagesParams {
 }
 
 /**
- * JSON object to set as the agent output. This completely replaces any previous output. If the agent was spawned, this value will be passed back to its parent. If the agent has an outputSchema defined, the output will be validated against it.
+ * JSON object to set as the agent output.
  */
 export interface SetOutputParams {}
 
 /**
- * Load a skill's full instructions when relevant to the current task. Skills are loaded on-demand - only load them when you need their specific guidance.
+ * Manage the self-evolving skill registry (create, delete, list, validate, show skills).
+ */
+export interface SkillManagerParams {
+  operation: 'create' | 'delete' | 'list' | 'validate' | 'show'
+  name?: string
+  description?: string
+  content?: string
+  overwrite?: boolean
+}
+
+/**
+ * Load a skill's full instructions when relevant to the current task.
  */
 export interface SkillParams {
-  /** The name of the skill to load */
   name: string
 }
 
 /**
- * Spawn multiple agents and send a prompt and/or parameters to each of them. These agents will run in parallel. Note that that means they will run independently. If you need to run agents sequentially, use spawn_agents with one agent at a time instead.
+ * Spawn multiple agents and send a prompt and/or parameters to each of them.
  */
 export interface SpawnAgentsParams {
   agents: {
-    /** Agent to spawn */
     agent_type: string
-    /** Prompt to send to the agent */
     prompt?: string
-    /** Parameters object for the agent (if any) */
     params?: Record<string, any>
   }[]
 }
@@ -365,15 +381,10 @@ export interface SpawnAgentsParams {
  * Replace strings in a file with new strings.
  */
 export interface StrReplaceParams {
-  /** The path to the file to edit. */
   path: string
-  /** Array of replacements to make. */
   replacements: {
-    /** The string to replace. This must be an *exact match* of the string you want to replace, including whitespace and punctuation. */
     oldString: string
-    /** The string to replace the corresponding oldString with. Can be empty to delete. */
     newString: string
-    /** Whether to allow multiple replacements of oldString. */
     allowMultiple?: boolean
   }[]
 }
@@ -382,22 +393,14 @@ export interface StrReplaceParams {
  * Suggest clickable followup prompts to the user.
  */
 export interface SuggestFollowupsParams {
-  /** List of suggested followup prompts the user can click to send */
   followups: {
-    /** The full prompt text to send as a user message when clicked */
     prompt: string
-    /** Short display label for the card (defaults to truncated prompt if not provided) */
     label?: string
   }[]
 }
 
 /**
- * Signal that the task is complete. Use this tool when:
-- The user's request is completely fulfilled
-- You need clarification from the user before continuing
-- You are stuck or need help from the user to continue
-
-This tool explicitly marks the end of your work on the current task.
+ * Signal that the task is complete.
  */
 export interface TaskCompletedParams {}
 
@@ -405,17 +408,19 @@ export interface TaskCompletedParams {}
  * Deeply consider complex tasks by brainstorming approaches and tradeoffs step-by-step.
  */
 export interface ThinkDeeplyParams {
-  /** Detailed step-by-step analysis. Initially keep each step concise (max ~5-7 words per step). */
   thought: string
 }
+
+/**
+ * Read the current todo list for the session.
+ */
+export interface TodoReadParams {}
 
 /**
  * Search the web for current information using Serper API.
  */
 export interface WebSearchParams {
-  /** The search query to find relevant web content */
   query: string
-  /** Search depth - 'standard' for quick results, 'deep' for more comprehensive search. Default is 'standard'. */
   depth?: 'standard' | 'deep'
 }
 
@@ -423,23 +428,17 @@ export interface WebSearchParams {
  * Create or edit a file with the given content.
  */
 export interface WriteFileParams {
-  /** Path to the file relative to the **project root** */
   path: string
-  /** What the change is intended to do in only one sentence. */
   instructions: string
-  /** Edit snippet to apply to the file. */
   content: string
 }
 
 /**
- * Write a todo list to track tasks for multi-step implementations. Use this frequently to maintain an updated step-by-step plan.
+ * Write a todo list to track tasks for multi-step implementations.
  */
 export interface WriteTodosParams {
-  /** List of todos with their completion status. Add ALL of the applicable tasks to the list, so you don't forget to do anything. Try to order the todos the same way you will complete them. Do not mark todos as completed if you have not completed them yet! */
   todos: {
-    /** Description of the task */
     task: string
-    /** Whether the task is completed */
     completed: boolean
   }[]
 }

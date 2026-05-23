@@ -36,6 +36,13 @@ import { updateSubgoalParams } from './params/tool/update-subgoal'
 import { webSearchParams } from './params/tool/web-search'
 import { writeFileParams } from './params/tool/write-file'
 import { writeTodosParams } from './params/tool/write-todos'
+import { advancedDiffParams } from './params/tool/advanced-diff'
+import { astSearchParams } from './params/tool/ast-search'
+import { batchParams } from './params/tool/batch'
+import { gitParams } from './params/tool/git'
+import { multiEditParams } from './params/tool/multi-edit'
+import { skillManagerParams } from './params/tool/skill-manager'
+import { todoReadParams } from './params/tool/todo-read'
 
 import type { $ToolParams, PublishedToolName, ToolName } from './constants'
 import type { ToolMessage } from '../types/messages/codebuff-message'
@@ -77,6 +84,13 @@ export const toolParams = {
   web_search: webSearchParams,
   write_file: writeFileParams,
   write_todos: writeTodosParams,
+  advanced_diff: advancedDiffParams,
+  ast_search: astSearchParams,
+  batch: batchParams,
+  git: gitParams,
+  multi_edit: multiEditParams,
+  skill_manager: skillManagerParams,
+  todo_read: todoReadParams,
 } satisfies {
   [K in ToolName]: $ToolParams<K>
 }
@@ -150,6 +164,34 @@ export const clientToolCallSchema = z.discriminatedUnion('toolName', [
   z.object({
     toolName: z.literal('write_file'),
     input: FileChangeSchema,
+  }),
+  z.object({
+    toolName: z.literal('batch'),
+    input: toolParams.batch.inputSchema,
+  }),
+  z.object({
+    toolName: z.literal('git'),
+    input: toolParams.git.inputSchema,
+  }),
+  z.object({
+    toolName: z.literal('multi_edit'),
+    input: toolParams.multi_edit.inputSchema,
+  }),
+  z.object({
+    toolName: z.literal('todo_read'),
+    input: toolParams.todo_read.inputSchema,
+  }),
+  z.object({
+    toolName: z.literal('advanced_diff'),
+    input: toolParams.advanced_diff.inputSchema,
+  }),
+  z.object({
+    toolName: z.literal('ast_search'),
+    input: toolParams.ast_search.inputSchema,
+  }),
+  z.object({
+    toolName: z.literal('skill_manager'),
+    input: toolParams.skill_manager.inputSchema,
   }),
 ])
 export const clientToolNames = clientToolCallSchema.def.options.map(

@@ -57,17 +57,18 @@ const ALL_SLASH_COMMANDS: SlashCommand[] = [
     aliases: ['h', '?'],
     implicitCommand: true,
   },
-  ...(CHATGPT_OAUTH_ENABLED
-    ? [
-        {
-          id: 'connect',
-          label: 'connect',
-          description: 'Connect your ChatGPT account',
-          aliases: ['connect:chatgpt', 'chatgpt'],
-        },
-      ]
-    : []),
-
+  {
+    id: 'connect',
+    label: 'connect',
+    description: 'Connect a provider (Anthropic, OpenAI, Google, Groq, OpenRouter, Ollama...)',
+    aliases: ['connect:chatgpt', 'chatgpt'],
+  },
+  {
+    id: 'models',
+    label: 'models',
+    description: 'List and switch between AI models',
+    aliases: ['model', 'switch-model', 'use-model'],
+  },
   {
     id: 'ads:enable',
     label: 'ads:enable',
